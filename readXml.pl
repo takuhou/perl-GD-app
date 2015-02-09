@@ -6,6 +6,10 @@ use XML::Simple;
 use Math::Trig;
 use GD;
 
+# XML読み込み
+my $xml = XML::Simple->new();
+my $xref = $xml->XMLin('sample-data/201009031500_09.xml');
+
 #画像作成
 my $img = new GD::Image(350, 350);
 
@@ -33,67 +37,78 @@ sub getXYPos {
 
 
 #my $xml = XML::Simple->new(forcearray => 1);
-my $xml = XML::Simple->new();
-
-my $xref = $xml->XMLin('sample-data/201009031500_09.xml');
 
 #print Dumper($xref);
-
 #print Dumper($xref->{'Body'}->{'Live'}->{'Situation'}->{'DateTime'});
 
-my $Lat_deg = $xref->{'Body'}->{'Live'}->{'Situation'}->{'WldLtd'}->{'deg'};
-my $Lat_min = $xref->{'Body'}->{'Live'}->{'Situation'}->{'WldLtd'}->{'min'};
-my $Lat_sec = $xref->{'Body'}->{'Live'}->{'Situation'}->{'WldLtd'}->{'sec'};
+# 台風緯度経度情報抽出（実況部）
+# 実況部の値取得
+my $Live_lat_deg = $xref->{'Body'}->{'Live'}->{'Situation'}->{'WldLtd'}->{'deg'};
+my $Live_lat_min = $xref->{'Body'}->{'Live'}->{'Situation'}->{'WldLtd'}->{'min'};
+my $Live_lat_sec = $xref->{'Body'}->{'Live'}->{'Situation'}->{'WldLtd'}->{'sec'};
 
-my $Lon_deg = $xref->{'Body'}->{'Live'}->{'Situation'}->{'WldLng'}->{'deg'};
-my $Lon_min = $xref->{'Body'}->{'Live'}->{'Situation'}->{'WldLng'}->{'min'};
-my $Lon_sec = $xref->{'Body'}->{'Live'}->{'Situation'}->{'WldLng'}->{'sec'};
+my $Live_lon_deg = $xref->{'Body'}->{'Live'}->{'Situation'}->{'WldLng'}->{'deg'};
+my $Live_lon_min = $xref->{'Body'}->{'Live'}->{'Situation'}->{'WldLng'}->{'min'};
+my $Live_lon_sec = $xref->{'Body'}->{'Live'}->{'Situation'}->{'WldLng'}->{'sec'};
 
-my $Lat = $Lat_deg + $Lat_min/100;
-my $Lon = $Lon_deg + $Lon_min/100;
+my $Live_lat = $Lat_deg + $Lat_min/100;
+my $Live_lon = $Lon_deg + $Lon_min/100;
 
-my $Next_Lat_deg = $xref->{'Body'}->{'Forecast'}->[0]->{'Situation'}->{'WldLtd'}->{'deg'};
-my $Next_Lat_min = $xref->{'Body'}->{'Forecast'}->[0]->{'Situation'}->{'WldLtd'}->{'min'};
-my $Next_Lat_sec = $xref->{'Body'}->{'Forecast'}->[0]->{'Situation'}->{'WldLtd'}->{'sec'};
+#予報部の個数取得
+my $Forecast = $xref->{'Body'}->{'Forecast'};
 
-my $Next_Lon_deg = $xref->{'Body'}->{'Forecast'}->[0]->{'Situation'}->{'WldLng'}->{'deg'};
-my $Next_Lon_min = $xref->{'Body'}->{'Forecast'}->[0]->{'Situation'}->{'WldLng'}->{'min'};
-my $Next_Lon_sec = $xref->{'Body'}->{'Forecast'}->[0]->{'Situation'}->{'WldLng'}->{'sec'};
+print Dumper($Forecast);
 
-my $Next_Lat = $Next_Lat_deg + $Next_Lat_min/100;
-my $Next_Lon = $Next_Lon_deg + $Next_Lon_min/100;
 
-my @P = getXYPos($Lon,$Lat);
 
-my $xP = $P[0];
-my $yP = $P[1];
+=pod
+foreach () {
+  my $Next_Lat_deg = $xref->{'Body'}->{'Forecast'}->[0]->{'Situation'}->{'WldLtd'}->{'deg'};
+  my $Next_Lat_min = $xref->{'Body'}->{'Forecast'}->[0]->{'Situation'}->{'WldLtd'}->{'min'};
+  my $Next_Lat_sec = $xref->{'Body'}->{'Forecast'}->[0]->{'Situation'}->{'WldLtd'}->{'sec'};
 
-my @nP = getXYPos($Next_Lon,$Next_Lat);
+  my $Next_Lon_deg = $xref->{'Body'}->{'Forecast'}->[0]->{'Situation'}->{'WldLng'}->{'deg'};
+  my $Next_Lon_min = $xref->{'Body'}->{'Forecast'}->[0]->{'Situation'}->{'WldLng'}->{'min'};
+  my $Next_Lon_sec = $xref->{'Body'}->{'Forecast'}->[0]->{'Situation'}->{'WldLng'}->{'sec'};
 
-my $nxP = $nP[0];
-my $nyP = $nP[1];
+  my $Next_Lat = $Next_Lat_deg + $Next_Lat_min/100;
+  my $Next_Lon = $Next_Lon_deg + $Next_Lon_min/100;
 
-print($xP, "\n");
-print($yP, "\n");
-print($nxP, "\n");
-print($nxP, "\n");
+  my @P = getXYPos($Lon,$Lat);
+
+  my $xP = $P[0];
+  my $yP = $P[1];
+
+  my @nP = getXYPos($Next_Lon,$Next_Lat);
+
+  my $nxP = $nP[0];
+  my $nyP = $nP[1];
+
+  print($xP, "\n");
+  print($yP, "\n");
+  print($nxP, "\n");
+  print($nxP, "\n");
+
+  my $black = $img->colorAllocate(0, 0, 0);
+  my $white = $img->colorAllocate(255, 255, 255);
+
+  # 白を透明色にし、インタレース化する
+  $img->transparent($white);
+  $img->interlaced('true');
+
+  $img->line($xP, $yP, $nxP, $nyP, $white);
+}
+=cut
+
 
 #print Dumper($xref->{'Body'}->{'Live'}->{'Pressure'});
 #print Dumper($xref->{'Body'}->{'Forecast'}->[1]);
 #print Dumper($xref->{'Body'}->{'Forecast'}->[2]);
 #print Dumper($xref->{'Body'}->{'Forecast'});
 
-my $black = $img->colorAllocate(0, 0, 0);
-my $white = $img->colorAllocate(255, 255, 255);
-
-# 白を透明色にし、インタレース化する
-$img->transparent($white);
-$img->interlaced('true');
-
-$img->line($xP, $yP, $nxP, $nyP, $white);
 #$img->line(0, 0, $nxP, $nyP, $white);
 
-open(OUT, "> gd-test.png");
-binmode(OUT);
-print OUT $img->png;
-close(OUT);
+#open(OUT, "> gd-test.png");
+#binmode(OUT);
+#print OUT $img->png;
+#close(OUT);
